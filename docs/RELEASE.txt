@@ -1,0 +1,4 @@
+GeoTalent premium release
+Release marker: GEOTALENT_PREMIUM_RELEASE_20260712
+Hero SHA-256: 211c393291a820bb06b9c6773b6a82b4b6c7e5163a4cd3ba1a15b7602a075257
+World geometry: derived from world_countries.geojson
