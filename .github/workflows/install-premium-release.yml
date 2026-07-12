@@ -1,0 +1,148 @@
+name: Install verified premium GeoTalent release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/install-premium-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: install-geotalent-premium-release
+  cancel-in-progress: false
+
+jobs:
+  install:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download and validate the premium release archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://filebin.net/geotalent-premium-final-arseniy24rus-20260712-v3/GeoTalent-premium-repository.zip'
+          rm -rf /tmp/geotalent-release /tmp/geotalent.zip
+          mkdir -p /tmp/geotalent-release
+          curl --fail --location --show-error \
+            --connect-timeout 30 --max-time 900 \
+            --retry 6 --retry-delay 5 --retry-all-errors \
+            "$url" --output /tmp/geotalent.zip
+          unzip -t /tmp/geotalent.zip >/dev/null
+          unzip -q /tmp/geotalent.zip -d /tmp/geotalent-release
+
+          if [[ -f /tmp/geotalent-release/docs/index.html ]]; then
+            src=/tmp/geotalent-release
+          else
+            mapfile -t roots < <(find /tmp/geotalent-release -mindepth 1 -maxdepth 1 -type d)
+            if [[ ${#roots[@]} -eq 1 && -f "${roots[0]}/docs/index.html" ]]; then
+              src="${roots[0]}"
+            else
+              echo 'Archive does not contain a valid GeoTalent repository root.' >&2
+              find /tmp/geotalent-release -maxdepth 3 -type f | sort | head -100 >&2
+              exit 1
+            fi
+          fi
+          echo "RELEASE_SOURCE=$src" >> "$GITHUB_ENV"
+          echo "Archive SHA-256: $(sha256sum /tmp/geotalent.zip | awk '{print $1}')"
+          echo "Archive files: $(find "$src" -type f | wc -l)"
+
+      - name: Replace repository contents with the premium release
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          rsync -a "$RELEASE_SOURCE"/ ./ --exclude '.git/'
+
+          # Branch-based Pages is already configured from main/docs. Do not leave
+          # bootstrap or deployment workflows that can conflict with that source.
+          rm -rf .github/workflows
+          mkdir -p docs
+          touch docs/.nojekyll
+
+          test -s docs/index.html
+          grep -qi 'GeoTalent' docs/index.html
+          grep -Eqi 'GLOBAL STEM TALENT|STEM-кадр|STEM Labour' docs/index.html
+
+          file_count=$(find . -type f ! -path './.git/*' | wc -l)
+          docs_count=$(find docs -type f | wc -l)
+          total_bytes=$(find . -type f ! -path './.git/*' -printf '%s\n' | awk '{s+=$1} END{print s+0}')
+          test "$file_count" -ge 50
+          test "$docs_count" -ge 15
+
+          hero_file=$(find docs -type f \( -iname '*hero*.webp' -o -iname '*hero*.png' -o -iname '*hero*.jpg' -o -iname '*hero*.jpeg' \) | head -1 || true)
+          world_file=$(find . -type f \( -iname '*world*.geojson' -o -iname '*world*.json' -o -iname '*world*.svg' \) | head -1 || true)
+          test -n "$hero_file"
+          test -n "$world_file"
+
+          hero_rel=${hero_file#docs/}
+          echo "HERO_REL=$hero_rel" >> "$GITHUB_ENV"
+          echo "Release files: $file_count" 
+          echo "Production files: $docs_count"
+          echo "Release bytes: $total_bytes"
+          echo "Hero: $hero_file"
+          echo "World geometry: $world_file"
+
+          cat > DEPLOYMENT_STATUS.md <<EOF
+          # GeoTalent premium deployment
+
+          The repository was replaced from the verified premium release archive.
+
+          - Installation run: ${GITHUB_RUN_ID}
+          - Installed at: $(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          - Files: ${file_count}
+          - Production files in \`docs\`: ${docs_count}
+          - Total bytes: ${total_bytes}
+          - Hero asset: \`${hero_file}\`
+          - World geometry: \`${world_file}\`
+          - Pages source: \`main /docs\`
+          EOF
+
+      - name: Commit the complete premium repository to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: deploy verified premium GeoTalent dashboard'
+          git push origin HEAD:main
+
+      - name: Verify the published GitHub Pages site and hero asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://arseniy24rus.github.io/GeoTalent-alpha-dashboard'
+          ok=0
+          for attempt in $(seq 1 60); do
+            code=$(curl -L -sS -H 'Cache-Control: no-cache' \
+              --connect-timeout 15 --max-time 45 \
+              -o /tmp/site.html -w '%{http_code}' \
+              "${base}/?release=${GITHUB_RUN_ID}-${attempt}" || true)
+            echo "Attempt ${attempt}: HTML ${code}"
+            if [[ "$code" == '200' ]] \
+              && grep -qi 'GeoTalent' /tmp/site.html \
+              && grep -Eqi 'GLOBAL STEM TALENT|STEM-кадр|STEM Labour' /tmp/site.html; then
+              hero_code=$(curl -L -sS -H 'Cache-Control: no-cache' \
+                --connect-timeout 15 --max-time 60 \
+                -o /tmp/hero.bin -w '%{http_code}' \
+                "${base}/${HERO_REL}?release=${GITHUB_RUN_ID}-${attempt}" || true)
+              hero_bytes=$(wc -c < /tmp/hero.bin 2>/dev/null || echo 0)
+              echo "Hero ${hero_code}; ${hero_bytes} bytes"
+              if [[ "$hero_code" == '200' && "$hero_bytes" -gt 50000 ]]; then
+                ok=1
+                break
+              fi
+            fi
+            sleep 10
+          done
+          test "$ok" = '1'
+          echo "Verified ${base}/ and ${base}/${HERO_REL}"
