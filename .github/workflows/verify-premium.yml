@@ -1,0 +1,78 @@
+name: Verify premium GeoTalent deployment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/verify-premium.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-geotalent-premium
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate premium production bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s docs/index.html
+          grep -q 'GEOTALENT_PREMIUM_RELEASE_20260712' docs/index.html
+          grep -q './assets/loader.js' docs/index.html
+          test -s docs/assets/premium.css
+          for file in premium-00.css premium-01.css premium-02.css loader.js data.gz-00.txt data.gz-01.txt app.gz.txt world.gz-00.txt world.gz-01.txt hero-00.txt hero-01.txt hero-02.txt hero-03.txt hero-04.txt; do
+            test -s "docs/assets/${file}"
+          done
+          cat docs/assets/hero-*.txt | base64 -d > /tmp/geotalent-hero.webp
+          test "$(head -c 4 /tmp/geotalent-hero.webp)" = 'RIFF'
+          test "$(sha256sum /tmp/geotalent-hero.webp | awk '{print $1}')" = '211c393291a820bb06b9c6773b6a82b4b6c7e5163a4cd3ba1a15b7602a075257'
+          python - <<'PY'
+          from pathlib import Path
+          import base64, gzip
+          root = Path('docs/assets')
+          checks = {
+              'data': ['data.gz-00.txt', 'data.gz-01.txt'],
+              'world': ['world.gz-00.txt', 'world.gz-01.txt'],
+              'app': ['app.gz.txt'],
+          }
+          for name, parts in checks.items():
+              encoded = ''.join((root / p).read_text(encoding='utf-8').strip() for p in parts)
+              payload = gzip.decompress(base64.b64decode(encoded))
+              if len(payload) < 1000:
+                  raise SystemExit(f'{name} payload is unexpectedly small: {len(payload)}')
+              print(f'{name}: {len(payload):,} decoded bytes')
+          PY
+
+      - name: Verify published GitHub Pages endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          page='https://arseniy24rus.github.io/GeoTalent-alpha-dashboard/'
+          ok=0
+          for attempt in $(seq 1 60); do
+            code=$(curl -L -sS -o /tmp/geotalent-page.html -w '%{http_code}' --connect-timeout 15 --max-time 45 -H 'Cache-Control: no-cache' "${page}?verify=${GITHUB_SHA}-${attempt}" || true)
+            echo "Attempt ${attempt}: HTTP ${code}"
+            if [[ "$code" = '200' ]] && grep -q 'GEOTALENT_PREMIUM_RELEASE_20260712' /tmp/geotalent-page.html; then
+              ok=1
+              break
+            fi
+            sleep 10
+          done
+          test "$ok" = '1'
+          for asset in assets/premium.css assets/loader.js assets/hero-00.txt assets/world.gz-00.txt assets/app.gz.txt; do
+            code=$(curl -L -sS -o /dev/null -w '%{http_code}' --connect-timeout 15 --max-time 45 "${page}${asset}?sha=${GITHUB_SHA}")
+            echo "${asset}: HTTP ${code}"
+            test "$code" = '200'
+          done
+          echo "Premium GeoTalent is publicly available and asset-complete."
