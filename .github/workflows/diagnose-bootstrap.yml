@@ -1,0 +1,38 @@
+name: Diagnose GeoTalent package source
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test archive endpoints
+        shell: bash
+        run: |
+          set -u
+          urls=(
+            "https://filebin.net/geotalent-alpha-dashboard-arseniy24rus-20260712/geotalent-dashboard-github-pages.zip"
+            "https://geotalent-alpha-dashboard.loca.lt/geotalent-dashboard-github-pages.zip"
+            "https://geotalent-alpha-dashboard.serveo.net/geotalent-dashboard-github-pages.zip"
+            "http://bore.pub:52438/geotalent-dashboard-github-pages.zip"
+          )
+          for url in "${urls[@]}"; do
+            echo "===== ${url} ====="
+            rm -f /tmp/package.zip /tmp/headers.txt
+            code=$(curl -L -sS --connect-timeout 15 --max-time 90 --retry 1 -D /tmp/headers.txt -o /tmp/package.zip -w '%{http_code}' "$url" || true)
+            echo "http_code=${code}"
+            sed -n '1,20p' /tmp/headers.txt || true
+            if [[ -f /tmp/package.zip ]]; then
+              bytes=$(wc -c </tmp/package.zip)
+              echo "bytes=${bytes}"
+              sha256sum /tmp/package.zip || true
+              file /tmp/package.zip || true
+              unzip -t /tmp/package.zip | tail -5 || true
+            fi
+          done
