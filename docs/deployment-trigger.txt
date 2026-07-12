@@ -1,2 +1,0 @@
-GeoTalent GitHub Pages deployment trigger and integrity marker.
-Generated after CI repair on 2026-07-12.
