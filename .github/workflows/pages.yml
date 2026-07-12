@@ -25,13 +25,9 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22
-          cache: npm
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build and verify static bundle
-        run: npm run check
+      - name: Verify prebuilt Pages bundle
+        run: node scripts/verify.mjs
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6
