@@ -5,24 +5,40 @@ on:
     types: [created]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   probe:
     if: github.event.issue.number == 1 && startsWith(github.event.comment.body, 'GEOTALENT_PAYLOAD_PROBE_')
     runs-on: ubuntu-latest
     steps:
-      - name: Measure comment payload
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Measure and persist comment payload
         shell: bash
         run: |
           python - <<'PY'
           import hashlib, json, os
+          from pathlib import Path
           event = json.load(open(os.environ['GITHUB_EVENT_PATH'], encoding='utf-8'))
           body = event['comment']['body']
           payload = body.split('\n', 1)[1] if '\n' in body else ''
-          print('BODY_CHARS=' + str(len(body)))
-          print('PAYLOAD_CHARS=' + str(len(payload)))
-          print('PAYLOAD_UTF8=' + str(len(payload.encode('utf-8'))))
-          print('PAYLOAD_SHA1=' + hashlib.sha1(payload.encode('utf-8')).hexdigest())
-          print('PAYLOAD_SUFFIX=' + payload[-32:])
+          result = {
+              'comment_id': event['comment']['id'],
+              'body_chars': len(body),
+              'payload_chars': len(payload),
+              'payload_utf8': len(payload.encode('utf-8')),
+              'payload_sha1': hashlib.sha1(payload.encode('utf-8')).hexdigest(),
+              'payload_suffix': payload[-64:],
+          }
+          Path('comment-probe-result.json').write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding='utf-8')
+          print(json.dumps(result, ensure_ascii=False, indent=2))
           PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add comment-probe-result.json
+          git commit -m "ci: record comment payload probe" || exit 0
+          git push origin HEAD:main
