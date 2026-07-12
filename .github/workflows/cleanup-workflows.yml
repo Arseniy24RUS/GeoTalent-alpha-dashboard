@@ -1,0 +1,47 @@
+name: Clean temporary GeoTalent workflows
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cleanup-workflows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove obsolete bootstrap and diagnostic workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .github/workflows/bootstrap.yml \
+            .github/workflows/bootstrap-v2.yml \
+            .github/workflows/bootstrap-v3.yml \
+            .github/workflows/bootstrap-v4.yml \
+            .github/workflows/deploy-pages.yml \
+            .github/workflows/cleanup-bootstrap.yml \
+            .github/workflows/cleanup-v2.yml \
+            .github/workflows/comment-probe.yml \
+            .github/workflows/diagnose.yml \
+            .github/workflows/diagnose-package.yml \
+            .github/workflows/cleanup-workflows.yml
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No temporary workflows remain.'
+            exit 0
+          fi
+          git commit -m 'ci: remove obsolete bootstrap and diagnostic workflows'
+          git push origin HEAD:main
