@@ -1,0 +1,83 @@
+name: Verify GeoTalent Pages publication
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/healthcheck.yml'
+  workflow_run:
+    workflows: ['Publish GeoTalent dashboard']
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: geotalent-pages-healthcheck
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful deployment workflow
+        if: github.event_name == 'workflow_run'
+        shell: bash
+        run: |
+          test '${{ github.event.workflow_run.conclusion }}' = 'success'
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify the public GitHub Pages endpoint
+        id: smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://arseniy24rus.github.io/GeoTalent-alpha-dashboard/'
+          ok=0
+          for attempt in $(seq 1 36); do
+            code=$(curl -L -sS -o /tmp/geotalent.html -w '%{http_code}' \
+              --connect-timeout 15 --max-time 45 "$url" || true)
+            echo "Attempt ${attempt}: HTTP ${code}"
+            if [[ "$code" = '200' ]] \
+              && grep -qi 'GeoTalent' /tmp/geotalent.html \
+              && grep -Eqi 'STEM|кадр' /tmp/geotalent.html; then
+              ok=1
+              break
+            fi
+            sleep 10
+          done
+          test "$ok" = '1'
+          bytes=$(wc -c < /tmp/geotalent.html)
+          sha=$(sha256sum /tmp/geotalent.html | awk '{print $1}')
+          echo "bytes=${bytes}" >> "$GITHUB_OUTPUT"
+          echo "sha256=${sha}" >> "$GITHUB_OUTPUT"
+
+      - name: Record independently verified deployment
+        shell: bash
+        run: |
+          cat > DEPLOYMENT_VERIFIED.md <<EOF
+          # GeoTalent deployment verification
+
+          The public GitHub Pages endpoint was independently requested from a GitHub-hosted Ubuntu runner and returned HTTP 200 with the expected GeoTalent/STEM content.
+
+          - URL: https://arseniy24rus.github.io/GeoTalent-alpha-dashboard/
+          - HTML bytes: ${{ steps.smoke.outputs.bytes }}
+          - HTML SHA-256: `${{ steps.smoke.outputs.sha256 }}`
+          - Verification run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          - Verified at: $(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          EOF
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add DEPLOYMENT_VERIFIED.md
+          if git diff --cached --quiet; then
+            echo 'Verification marker is already current.'
+          else
+            git commit -m 'docs: record verified GitHub Pages deployment'
+            git push origin HEAD:main
+          fi
