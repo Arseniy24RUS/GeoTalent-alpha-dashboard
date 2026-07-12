@@ -1,0 +1,2 @@
+GeoTalent Pages diagnostic deployment trigger: 2026-07-12T20:00Z
+Marker: GEOTALENT_DEPLOYMENT_MARKER_20260712
