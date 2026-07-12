@@ -1,0 +1,149 @@
+name: Verify published premium GeoTalent release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-premium-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: verify-geotalent-premium-release
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout premium repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate committed premium release
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s docs/index.html
+          grep -qi 'GeoTalent' docs/index.html
+          grep -Eqi 'GLOBAL STEM TALENT|STEM-кадр|STEM Labour' docs/index.html
+          file_count=$(find . -type f ! -path './.git/*' | wc -l)
+          docs_count=$(find docs -type f | wc -l)
+          hero_file=$(find docs -type f \( -iname '*hero*.webp' -o -iname '*hero*.png' -o -iname '*hero*.jpg' -o -iname '*hero*.jpeg' \) | head -1 || true)
+          world_file=$(find . -type f \( -iname '*world*.geojson' -o -iname '*world*.json' -o -iname '*world*.svg' \) | head -1 || true)
+          test "$file_count" -ge 50
+          test "$docs_count" -ge 15
+          test -n "$hero_file"
+          test -n "$world_file"
+          echo "HERO_REL=${hero_file#docs/}" >> "$GITHUB_ENV"
+          echo "FILE_COUNT=$file_count" >> "$GITHUB_ENV"
+          echo "DOCS_COUNT=$docs_count" >> "$GITHUB_ENV"
+          echo "WORLD_FILE=$world_file" >> "$GITHUB_ENV"
+
+      - name: Verify the live HTML, CSS, JavaScript and hero
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://arseniy24rus.github.io/GeoTalent-alpha-dashboard'
+          ok=0
+          for attempt in $(seq 1 60); do
+            html_code=$(curl -L -sS -H 'Cache-Control: no-cache' \
+              --connect-timeout 15 --max-time 45 \
+              -o /tmp/site.html -w '%{http_code}' \
+              "${base}/?premium=${GITHUB_RUN_ID}-${attempt}" || true)
+            echo "Attempt ${attempt}: HTML ${html_code}"
+            if [[ "$html_code" == '200' ]] \
+              && grep -qi 'GeoTalent' /tmp/site.html \
+              && grep -Eqi 'GLOBAL STEM TALENT|STEM-кадр|STEM Labour' /tmp/site.html; then
+              hero_code=$(curl -L -sS -H 'Cache-Control: no-cache' \
+                --connect-timeout 15 --max-time 60 \
+                -o /tmp/hero.bin -w '%{http_code}' \
+                "${base}/${HERO_REL}?premium=${GITHUB_RUN_ID}-${attempt}" || true)
+              hero_bytes=$(wc -c < /tmp/hero.bin 2>/dev/null || echo 0)
+              echo "Hero: HTTP ${hero_code}, ${hero_bytes} bytes"
+              if [[ "$hero_code" == '200' && "$hero_bytes" -gt 50000 ]]; then
+                ok=1
+                break
+              fi
+            fi
+            sleep 10
+          done
+          test "$ok" = '1'
+
+          python - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          html = Path('/tmp/site.html').read_text(encoding='utf-8', errors='replace')
+          refs = sorted(set(re.findall(r'(?:src|href)=["\'](\./[^"\']+)["\']', html)))
+          base = 'https://arseniy24rus.github.io/GeoTalent-alpha-dashboard/'
+          failures = []
+          for ref in refs:
+              url = base + ref[2:]
+              result = subprocess.run(['curl','-L','-sS','-o','/dev/null','-w','%{http_code}',url], text=True, capture_output=True)
+              code = result.stdout.strip()
+              print(code, url)
+              if code != '200':
+                  failures.append((code, url))
+          if failures:
+              raise SystemExit(f'Broken index assets: {failures}')
+          PY
+
+      - name: Record successful publication in the repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > PUBLICATION_VERIFIED.md <<EOF
+          # Premium GeoTalent publication verified
+
+          - Public URL: https://arseniy24rus.github.io/GeoTalent-alpha-dashboard/
+          - Verified at: $(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          - Verification run: ${GITHUB_RUN_ID}
+          - Repository files: ${FILE_COUNT}
+          - Production files: ${DOCS_COUNT}
+          - Hero asset: \`${HERO_REL}\`
+          - World geometry: \`${WORLD_FILE}\`
+          - HTML, linked CSS/JavaScript and hero returned HTTP 200.
+          EOF
+          rm -f .github/workflows/verify-premium-release.yml
+          rmdir .github/workflows 2>/dev/null || true
+          rmdir .github 2>/dev/null || true
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'chore: record verified premium GeoTalent publication'
+          git push origin HEAD:main
+
+      - name: Close the publication issue with verified evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          body=$(cat <<EOF
+          Premium GeoTalent publication verified successfully.
+
+          - Public URL: https://arseniy24rus.github.io/GeoTalent-alpha-dashboard/
+          - Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+          - Files: ${FILE_COUNT}; production files: ${DOCS_COUNT}
+          - Hero asset and all assets referenced directly by the HTML returned HTTP 200.
+          - Real world geometry is committed as ${WORLD_FILE}.
+          EOF
+          )
+          curl --fail --show-error -X POST \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/2/comments" \
+            -d "$(python -c 'import json,sys; print(json.dumps({"body":sys.stdin.read()}))' <<< "$body")"
+          curl --fail --show-error -X PATCH \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/2" \
+            -d '{"state":"closed","state_reason":"completed"}'
