@@ -1,0 +1,52 @@
+name: Finalize GeoTalent repository structure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/cleanup-v2.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify full project before cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f package.json
+          test -f package-lock.json
+          test -f src/App.jsx
+          test -f src/styles.css
+          test -f docs/index.html
+          test -f docs/downloads/DATA_INVENTORY.json
+          count=$(find . -type f ! -path './.git/*' | wc -l)
+          test "$count" -ge 70
+          echo "Verified ${count} project files"
+
+      - name: Remove temporary workflows and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .github/workflows/bootstrap.yml \
+            .github/workflows/bootstrap-v2.yml \
+            .github/workflows/bootstrap-v3.yml \
+            .github/workflows/bootstrap-v4.yml \
+            .github/workflows/deploy-pages.yml \
+            .github/workflows/cleanup-bootstrap.yml \
+            .github/workflows/cleanup-v2.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: finalize GeoTalent repository" || true
+          git push origin HEAD:main
