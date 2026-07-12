@@ -1,82 +1,21 @@
 <!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#ffffff">
-  <meta name="description" content="GeoTalent — глобальная аналитика рынка STEM-кадров: вакансии, занятость, компании и территориальные профили.">
-  <meta property="og:title" content="GeoTalent — Global STEM Labour Intelligence">
-  <meta property="og:description" content="7 источников, 24 219 записей, 40 стран спроса и 37 стран занятости.">
-  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./assets/premium.css">
-  <title>GeoTalent — Global STEM Labour Intelligence</title>
-  <!-- GEOTALENT_PREMIUM_RELEASE_20260712 -->
-</head>
-<body>
-  <header class="site-header">
-    <div class="shell header-inner">
-      <a class="brand" href="#top" aria-label="GeoTalent — наверх"><span class="brand-mark"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span><strong>GeoTalent</strong><small>STEM LABOUR OBSERVATORY</small></span></a>
-      <nav id="mainNav" aria-label="Основная навигация"><a href="#dashboard">Дашборд</a><a href="#map">Карта</a><a href="#intelligence">Аналитика</a><a href="#sources">Источники</a><a href="#project">Проект</a></nav>
-      <div class="header-actions"><a class="header-link" href="https://github.com/Arseniy24RUS/GeoTalent-alpha-dashboard">GitHub ↗</a><button class="menu" id="menuButton" aria-label="Меню">☰</button></div>
-    </div>
-  </header>
-
-  <main id="top">
-    <section class="hero">
-      <div class="hero-grid"></div>
-      <div class="shell hero-layout">
-        <div class="hero-copy">
-          <span class="pill">GLOBAL STEM TALENT INTELLIGENCE <i></i></span>
-          <h1>GeoTalent</h1>
-          <h2>Глобальная аналитика рынка STEM-кадров</h2>
-          <p>Платформа объединяет вакансии, занятость, компании и территориальные профили из семи международных источников — с прозрачной методологией и доступом от глобального обзора до конкретной записи.</p>
-          <div class="hero-actions"><a class="btn primary" href="#dashboard">Исследовать дашборд <span>→</span></a><a class="btn" href="#map">Открыть карту <span>↗</span></a><a class="btn ghost" href="#project">О проекте</a></div>
-          <div class="trust-row"><span><b>◉</b><strong>Мульти-источник</strong><small>7 независимых контуров</small></span><span><b>◎</b><strong>Воспроизводимость</strong><small>методика и происхождение данных</small></span><span><b>◇</b><strong>Страна → регион</strong><small>663 территориальных кода</small></span></div>
-        </div>
-        <div class="hero-media">
-          <img id="heroImage" alt="Мировая карта, графики и аналитические слои GeoTalent">
-          <div class="hero-fade"></div>
-          <div class="floating-card pressure-card"><small>PRESSURE SIGNAL</small><strong id="heroCountry">Бельгия</strong><span id="heroSignal">26,85 на 1 000 занятых</span></div>
-          <div class="floating-card layer-card"><small>LARGEST DATA LAYER</small><strong>Компании</strong><span>21 424 объявления</span></div>
-        </div>
-      </div>
-      <div class="shell kpi-strip" id="kpiStrip"></div>
-      <div class="shell source-ticker" id="sourceTicker"></div>
-    </section>
-
-    <section class="section dashboard-section" id="dashboard">
-      <div class="shell">
-        <div class="section-head"><div><span class="eyebrow">ЖИВОЙ ПРОДУКТ, А НЕ СТАТИЧНАЯ ПРЕЗЕНТАЦИЯ</span><h2>Исследуйте GeoTalent</h2><p>Шесть взаимосвязанных представлений превращают исходные таблицы в карту, тренды, структуру спроса, профили работодателей и доступ к конкретным объявлениям.</p></div><a class="btn" href="#map">Открыть полный контур <span>↗</span></a></div>
-        <div class="tabs"><button class="active">Обзор</button><button data-scroll="map">География</button><button data-scroll="trend">Рынок труда</button><button data-scroll="companies">Компании</button><button data-scroll="data">Data Explorer</button><button data-scroll="project">Проект</button></div>
-        <div class="dashboard-grid">
-          <article class="card map-card" id="map"><header><span><small>ГЛОБАЛЬНЫЙ СРЕЗ</small><h3>Карта GeoTalent Signal</h3></span><i>◎</i></header><div class="map-stage" id="mapHost"><div class="map-loader">Загрузка геометрии world_countries.geojson…</div></div><div class="map-callout"><span><i></i><b id="mapSelectedName">Бельгия</b></span><strong id="mapSelectedValue">26,85</strong></div></article>
-          <article class="card" id="trend"><header><span><small>ДИНАМИКА</small><h3>Занятость STEM, 2023–2025</h3></span><i>↗</i></header><div class="chart-stage" id="trendChart"></div></article>
-          <article class="card" id="companies"><header><span><small>КОМПАНИИ</small><h3>Работодатели в снимке объявлений</h3></span><i>▦</i></header><div class="treemap" id="treemap"></div></article>
-          <article class="card"><header><span><small>ПРОФЕССИОНАЛЬНАЯ СТРУКТУРА</small><h3>Спрос по STEM-группам</h3></span><i>▤</i></header><div class="heatmap" id="heatmap"></div></article>
-          <article class="card"><header><span><small>ДИНАМИКА ПУБЛИКАЦИЙ</small><h3>Недельный пульс объявлений</h3></span><i>⌁</i></header><div class="weekly" id="weeklyChart"></div></article>
-          <article class="card data-card" id="data"><header><span><small>DATA EXPLORER</small><h3>Последние доступные объявления</h3></span><i>≡</i></header><label class="search"><span>⌕</span><input id="tableSearch" placeholder="Поиск по компании, вакансии или стране"></label><div class="table-wrap"><table><thead><tr><th>Страна</th><th>Компания</th><th>Вакансия</th><th>STEM</th></tr></thead><tbody id="dataTable"></tbody></table></div><div class="table-footer"><span id="tableCount"></span><button id="nextRows">Показать ещё →</button></div></article>
-        </div>
-        <div class="fact-strip" id="factStrip"></div>
-      </div>
-    </section>
-
-    <section class="section intelligence" id="intelligence">
-      <div class="shell"><span class="eyebrow">ЦЕННОСТЬ ДЛЯ РЕШЕНИЙ</span><h2>Данные превращаются в решения</h2><p class="section-intro">GeoTalent связывает международную статистику и платформенные сигналы в единый контур стратегического мониторинга.</p><div class="value-grid"><article><i>⌁</i><h3>Стратегический мониторинг</h3><p>Отслеживание спроса, занятости и территориальных различий в одном интерфейсе.</p></article><article><i>◎</i><h3>Международное сравнение</h3><p>Сопоставимые профили стран с явным указанием периода, единицы и источника.</p></article><article><i>↗</i><h3>Спрос и предложение</h3><p>Совместный анализ вакансий, занятости и индикативных сигналов напряжённости.</p></article><article><i>▦</i><h3>Аналитика компаний</h3><p>Структура работодателей, география объявлений и раскрытие до конкретной записи.</p></article><article><i>◇</i><h3>Территориальные профили</h3><p>Переход от глобальной карты к национальному и субрегиональному уровню.</p></article><article><i>✦</i><h3>Сценарная аналитика</h3><p>Основа для прогнозов, ранних сигналов и поддержки стратегических решений.</p></article></div></div>
-    </section>
-
-    <section class="section map-deep-dive">
-      <div class="shell map-deep-grid"><div><span class="eyebrow">КООРДИНИРОВАННОЕ ИССЛЕДОВАНИЕ</span><h2>Мировая карта и территориальные профили</h2><p>Картографический слой построен непосредственно по переданному <code>world_countries.geojson</code>. Цвет кодирует индикативный GeoTalent Signal, а выбор страны синхронно обновляет профиль.</p><div class="large-map" id="largeMap"></div></div><aside class="ranking-panel"><span class="eyebrow">ЛИДЕРЫ ТЕКУЩЕГО СРЕЗА</span><h3>Pressure signal</h3><div id="ranking"></div><div class="method-note"><strong>Методологический контракт</strong><p>EURES STEM-вакансии ÷ Eurostat STEM-занятость × 1 000. Это навигационный платформенный сигнал, а не официальная норма дефицита.</p></div></aside></div>
-    </section>
-
-    <section class="section trust-section" id="sources">
-      <div class="shell trust-grid"><article class="trust-panel"><span class="eyebrow">ДОСТОВЕРНЫЕ ИСТОЧНИКИ</span><h2>Международное покрытие и прозрачное происхождение</h2><p>Каждый аналитический слой привязан к первичному источнику, периоду, единице измерения и классификации.</p><div class="source-grid" id="sourceGrid"></div></article><article class="architecture-panel"><span class="eyebrow">АРХИТЕКТУРА ПЛАТФОРМЫ</span><h2>Модульный конвейер от источника до решения</h2><div class="pipeline"><div><i>⇩</i><strong>Сбор данных</strong><small>API, таблицы и снимки</small></div><b>→</b><div><i>✓</i><strong>Контроль качества</strong><small>уровни, единицы, пропуски</small></div><b>→</b><div><i>▤</i><strong>Семантический слой</strong><small>география и таксономии</small></div><b>→</b><div><i>⌁</i><strong>Аналитика</strong><small>карты, тренды, профили</small></div><b>→</b><div class="accent"><i>✦</i><strong>Решения</strong><small>дашборды и сценарии</small></div></div><div class="architecture-badges"><span>◇ Privacy by design</span><span>◎ Воспроизводимость</span><span>▦ Открытые форматы</span></div></article></div>
-    </section>
-
-    <section class="section project-section" id="project"><div class="shell project-cta"><div><span class="eyebrow">ОТ ПРОТОТИПА К ПЛАТФОРМЕ</span><h2>GeoTalent показывает масштаб уже проделанной работы — и потенциал следующего этапа</h2><p>Готовый аналитический контур объединяет семь источников, 24 219 записей, 40 стран спроса, 37 стран занятости и 663 региональных кода.</p></div><a class="btn primary" href="https://github.com/Arseniy24RUS/GeoTalent-alpha-dashboard">Открыть репозиторий <span>→</span></a><div class="cta-cubes"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></section>
-  </main>
-
-  <footer><div class="shell footer-inner"><div class="brand footer-brand"><span class="brand-mark"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span><strong>GeoTalent</strong><small>GLOBAL STEM LABOUR INTELLIGENCE</small></span></div><p>Демонстрационный аналитический прототип. Период, источник, единица и классификация указываются рядом с показателем.</p><a href="#top">Наверх ↑</a></div></footer>
-  <div class="tooltip" id="tooltip"></div>
-  <script src="./assets/loader.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0A132D" />
+    <meta name="description" content="GeoTalent — интерактивная глобальная витрина спроса, занятости, компаний и проектного масштаба в STEM." />
+    <meta property="og:title" content="GeoTalent — глобальная геоаналитика STEM-кадров" />
+    <meta property="og:description" content="7 источников, 24 219 записей, многоуровневая география и полный Data Explorer." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <title>GeoTalent — глобальная геоаналитика STEM-кадров</title>
+    <script type="module" crossorigin src="./assets/index-C-2UBK8h.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BoE8dLO3.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
 </html>

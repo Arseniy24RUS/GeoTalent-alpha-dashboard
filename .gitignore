@@ -1,0 +1,17 @@
+node_modules/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+
+# Local QA output
+preview-*.png
+preview-*.webp
+desktop-*.webp
+mobile-*.png
+test-file.png
+
+# Python cache
+__pycache__/
+*.py[cod]
