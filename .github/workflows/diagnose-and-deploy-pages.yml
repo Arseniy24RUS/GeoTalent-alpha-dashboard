@@ -1,4 +1,4 @@
-name: Diagnose and deploy GeoTalent Pages
+name: Diagnose GeoTalent Pages API
 
 on:
   pull_request:
@@ -10,75 +10,35 @@ permissions:
   pages: write
   id-token: write
 
-concurrency:
-  group: geotalent-pages-diagnostic
-  cancel-in-progress: true
-
 jobs:
-  deploy:
+  diagnose:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    timeout-minutes: 3
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Inspect and enable Pages through REST API
+      - name: Print Pages API responses
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          set -euo pipefail
+          set +e
           api="https://api.github.com/repos/${GITHUB_REPOSITORY}/pages"
           headers=(-H 'Accept: application/vnd.github+json' -H "Authorization: Bearer ${GH_TOKEN}" -H 'X-GitHub-Api-Version: 2022-11-28')
-          get_code=$(curl -sS -o /tmp/pages-before.json -w '%{http_code}' "${headers[@]}" "$api")
-          echo "GET /pages -> ${get_code}"
-          cat /tmp/pages-before.json || true
-          if [[ "$get_code" == '404' ]]; then
-            write_code=$(curl -sS -o /tmp/pages-write.json -w '%{http_code}' -X POST "${headers[@]}" -d '{"build_type":"workflow"}' "$api")
-          else
-            write_code=$(curl -sS -o /tmp/pages-write.json -w '%{http_code}' -X PUT "${headers[@]}" -d '{"build_type":"workflow"}' "$api")
-          fi
-          echo "Pages write -> ${write_code}"
-          cat /tmp/pages-write.json || true
-          test "$write_code" = '201' -o "$write_code" = '204' -o "$write_code" = '409'
-
-      - name: Validate site
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -s docs/index.html
-          grep -q 'GEOTALENT_DEPLOYMENT_MARKER_20260712' docs/index.html
-          echo "Site bytes: $(wc -c < docs/index.html)"
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs
-
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-      - name: Verify public endpoint
-        env:
-          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "Deployment URL: ${PAGE_URL}"
-          ok=0
-          for attempt in $(seq 1 36); do
-            code=$(curl -L -sS -o /tmp/site.html -w '%{http_code}' --connect-timeout 15 --max-time 40 -H 'Cache-Control: no-cache' "${PAGE_URL}?run=${GITHUB_RUN_ID}-${attempt}" || true)
-            echo "Attempt ${attempt}: HTTP ${code}; $(wc -c < /tmp/site.html 2>/dev/null || echo 0) bytes"
-            if [[ "$code" == '200' ]] && grep -q 'GEOTALENT_DEPLOYMENT_MARKER_20260712' /tmp/site.html; then ok=1; break; fi
-            sleep 10
-          done
-          test "$ok" = '1'
+          get_code=$(curl -sS -o /tmp/get.json -w '%{http_code}' "${headers[@]}" "$api")
+          echo "PAGES_GET_CODE=${get_code}"
+          echo 'PAGES_GET_BODY_BEGIN'
+          cat /tmp/get.json
+          echo
+          echo 'PAGES_GET_BODY_END'
+          post_code=$(curl -sS -o /tmp/post.json -w '%{http_code}' -X POST "${headers[@]}" -d '{"build_type":"workflow"}' "$api")
+          echo "PAGES_POST_CODE=${post_code}"
+          echo 'PAGES_POST_BODY_BEGIN'
+          cat /tmp/post.json
+          echo
+          echo 'PAGES_POST_BODY_END'
+          put_code=$(curl -sS -o /tmp/put.json -w '%{http_code}' -X PUT "${headers[@]}" -d '{"build_type":"workflow"}' "$api")
+          echo "PAGES_PUT_CODE=${put_code}"
+          echo 'PAGES_PUT_BODY_BEGIN'
+          cat /tmp/put.json
+          echo
+          echo 'PAGES_PUT_BODY_END'
+          exit 0
