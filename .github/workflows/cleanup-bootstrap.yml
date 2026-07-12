@@ -1,0 +1,46 @@
+name: Finalize GeoTalent repository
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/cleanup-bootstrap.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout complete history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify repository completeness
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f package.json
+          test -f package-lock.json
+          test -f src/App.jsx
+          test -f docs/index.html
+          test -f docs/downloads/DATA_INVENTORY.json
+
+      - name: Remove temporary bootstrap workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .github/workflows/bootstrap.yml \
+            .github/workflows/bootstrap-v2.yml \
+            .github/workflows/bootstrap-v3.yml \
+            .github/workflows/deploy-pages.yml \
+            .github/workflows/cleanup-bootstrap.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: finalize repository and remove bootstrap workflows" || true
+          git push origin HEAD:main
