@@ -1,0 +1,3 @@
+Premium GeoTalent verification trigger.
+Release: GEOTALENT_PREMIUM_RELEASE_20260712
+This branch contains no production changes beyond this verification marker.
