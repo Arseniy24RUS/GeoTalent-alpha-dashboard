@@ -6,13 +6,15 @@ on:
     paths:
       - 'docs/**'
       - '.github/workflows/verify-premium.yml'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: verify-geotalent-premium
+  group: verify-geotalent-premium-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
