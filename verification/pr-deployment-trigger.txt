@@ -1,2 +1,3 @@
-GeoTalent Pages diagnostic deployment trigger: 2026-07-12T20:00Z
+GeoTalent Pages diagnostic deployment trigger: 2026-07-12T20:06Z
 Marker: GEOTALENT_DEPLOYMENT_MARKER_20260712
+Probe: Pages REST API response isolation
