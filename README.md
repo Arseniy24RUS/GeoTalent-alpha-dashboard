@@ -1,9 +1,20 @@
 # GeoTalent — STEM Labour Observatory
 
-Статическая аналитическая витрина международного STEM-рынка труда.
+Самодостаточная статическая аналитическая витрина международного STEM-рынка труда.
 
-Публичный адрес: <https://arseniy24rus.github.io/GeoTalent-alpha-dashboard/>
+Production-файл находится в `docs/index.html`; он не зависит от внешнего API, CDN, npm-сборки или серверной части. Каталог `docs` подготовлен для штатной публикации GitHub Pages из ветки `main`.
 
-Основной production-артефакт находится в `docs/index.html`. Он самодостаточен, не требует внешнего API, CDN или сборки на GitHub runner. Публикация выполняется workflow `.github/workflows/deploy-pages.yml`; отдельный workflow `.github/workflows/verify-pages.yml` проверяет фактический HTTP-ответ публичного адреса и сохраняет результат в `verification/latest.json`.
+## Однократное включение GitHub Pages
 
-Текущий контур отражает 7 первичных источников, 24 219 записей, 40 стран спроса, 37 стран занятости и 663 региональных кода. Разные географические уровни, единицы измерения и классификации в интерфейсе методически разделены.
+Откройте **Settings → Pages**: <https://github.com/Arseniy24RUS/GeoTalent-alpha-dashboard/settings/pages>
+
+Выберите:
+
+- **Source:** Deploy from a branch
+- **Branch:** `main`
+- **Folder:** `/docs`
+- нажмите **Save**
+
+После сохранения публичный адрес: <https://arseniy24rus.github.io/GeoTalent-alpha-dashboard/>
+
+Подробная диагностика и объяснение, почему это действие нельзя выполнить через стандартный `GITHUB_TOKEN`, приведены в `DEPLOYMENT.md`.
