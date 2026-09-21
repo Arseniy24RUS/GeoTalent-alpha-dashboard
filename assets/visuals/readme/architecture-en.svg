@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="640" viewBox="0 0 1040 640" role="img" aria-labelledby="title desc">
+  <title id="title">GeoTalent evidence workflow</title>
+  <desc id="desc">Workflow from public STEM sources through the data build into the static dashboard, map, profile, labs, Data Explorer, and methodological guardrails.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto">
+      <path d="M2 2 L10 6 L2 10 Z" fill="#2947A0"/>
+    </marker>
+    <style>
+      .bg{fill:#f6f8fc}
+      .panel{fill:#fff;stroke:#cfd8e6;stroke-width:2}
+      .panel-blue{fill:#eef5ff;stroke:#2947A0;stroke-width:2}
+      .panel-green{fill:#eef9f7;stroke:#539D96;stroke-width:2}
+      .title{font:700 32px Arial,sans-serif;fill:#0a132d}
+      .subtitle{font:400 22px Arial,sans-serif;fill:#3d4a60}
+      .kicker{font:700 18px Arial,sans-serif;letter-spacing:2px;fill:#539D96}
+      .heading{font:700 25px Arial,sans-serif;fill:#0a132d}
+      .body{font:400 22px Arial,sans-serif;fill:#243047}
+      .small{font:400 22px Arial,sans-serif;fill:#4b5870}
+      .arrow{stroke:#2947A0;stroke-width:3;fill:none;marker-end:url(#arrow)}
+      .dash{stroke:#93a4c2;stroke-width:2;stroke-dasharray:7 7;fill:none}
+    </style>
+  </defs>
+  <rect class="bg" width="1040" height="640" rx="0"/>
+  <text class="title" x="40" y="56">GeoTalent evidence workflow</text>
+  <text class="subtitle" x="40" y="90">Static GitHub Pages dashboard for public STEM demand, employment, and company records</text>
+
+  <rect class="panel" x="40" y="130" width="270" height="170" rx="8"/>
+  <text class="kicker" x="64" y="164">INPUTS</text>
+  <text class="heading" x="64" y="198">Seven sources</text>
+  <text class="body" x="64" y="232">EURES, Adzuna,</text>
+  <text class="body" x="64" y="260">Eurostat, BLS,</text>
+  <text class="body" x="64" y="288">StatCan, UK NOMIS</text>
+
+  <rect class="panel-blue" x="385" y="130" width="270" height="170" rx="8"/>
+  <text class="kicker" x="409" y="164">BUILD CONTRACT</text>
+  <text class="heading" x="409" y="198">Normalize facts</text>
+  <text class="body" x="409" y="232">scripts/build_data.py</text>
+  <text class="body" x="409" y="260">SHA-256 inventory</text>
+  <text class="body" x="409" y="288">public dossier only</text>
+
+  <rect class="panel" x="730" y="130" width="270" height="170" rx="8"/>
+  <text class="kicker" x="754" y="164">STATIC BUNDLE</text>
+  <text class="heading" x="754" y="198">Pages-ready files</text>
+  <text class="body" x="754" y="232">JSON for browser UI</text>
+  <text class="body" x="754" y="260">CSV / Parquet exports</text>
+  <text class="body" x="754" y="288">docs/ production build</text>
+
+  <path class="arrow" d="M312 215 H370"/>
+  <path class="arrow" d="M657 215 H715"/>
+
+  <rect class="panel-green" x="115" y="382" width="360" height="190" rx="8"/>
+  <text class="kicker" x="139" y="416">USER WORKFLOW</text>
+  <text class="heading" x="139" y="450">Map to Explorer</text>
+  <text class="body" x="139" y="484">Choose source, period,</text>
+  <text class="body" x="139" y="512">STEM group, territory;</text>
+  <text class="body" x="139" y="540">open rows and export CSV.</text>
+
+  <rect class="panel" x="565" y="382" width="360" height="190" rx="8"/>
+  <text class="kicker" x="589" y="416">METHOD GUARDRAILS</text>
+  <text class="heading" x="589" y="450">Avoid false totals</text>
+  <text class="body" x="589" y="484">Keep units and taxonomies</text>
+  <text class="body" x="589" y="512">separate; treat vacancies</text>
+  <text class="body" x="589" y="540">as snapshots, not trends.</text>
+
+  <path class="arrow" d="M865 302 V340 H302 V372"/>
+  <path class="arrow" d="M475 477 H550"/>
+  <path class="dash" d="M520 302 V340"/>
+  <text class="small" x="352" y="366">24,219 rows stay inspectable end-to-end</text>
+</svg>
