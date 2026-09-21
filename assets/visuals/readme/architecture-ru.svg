@@ -56,7 +56,7 @@
   <text class="body" x="139" y="540">проверка строк и CSV.</text>
 
   <rect class="panel" x="565" y="382" width="360" height="190" rx="8"/>
-  <text class="kicker" x="589" y="416">МЕТОДИЧЕСКИЕ ОГРАНИЧЕНИЯ</text>
+  <text class="kicker" x="589" y="416">ОГРАНИЧЕНИЯ МЕТОДИКИ</text>
   <text class="heading" x="589" y="450">Без ложных сумм</text>
   <text class="body" x="589" y="484">Единицы и таксономии</text>
   <text class="body" x="589" y="512">разделены; вакансии</text>
